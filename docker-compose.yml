@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  # fastapi:
+  #   image: giskardintegral/fastapi-ml-fastapi:latest
+  #   restart: always
+  #     - "80:80"
+
+  backend:
+    container_name: backend
+    image: fastapiprojects/backend:latest
+    #platform: linux/arm64/v8
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
