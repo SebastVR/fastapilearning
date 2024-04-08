@@ -1,0 +1,32 @@
+@localhost=localhost
+@port = 80
+@host = http://{{localhost}}:{{port}}
+@contentTypeEncoded = application/x-www-form-urlencoded
+@contentType = application/json
+
+
+GET {{host}}/items/
+
+################################
+### get file
+
+GET {{host}}/items/1
+
+################################
+### POST file
+curl -X 'POST' \
+  'http://0.0.0.0/files/pdf' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@/home/integral/Downloads/Contrato_Sebastian Velasquez Ramirez (1).pdf;type=application/pdf'
+
+
+
+  ################################
+### POST file
+POST {{host}}/files/pdf
+Content-Type: {{contentType}}
+
+{
+  "file": "home/integral/Downloads/Contrato_Sebastian Velasquez Ramirez (1).pdf;type=application/pdf",
+}
