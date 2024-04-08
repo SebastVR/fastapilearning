@@ -1,9 +1,18 @@
 version: '3.8'
 services:
-  # fastapi:
-  #   image: giskardintegral/fastapi-ml-fastapi:latest
-  #   restart: always
-  #     - "80:80"
+  db:
+    image: postgres:latest
+    container_name: postgres_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - credentials # Asegúrate de que este archivo contenga las variables de entorno para PostgreSQL.
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-postgresDB}
+      - POSTGRES_USER=${POSTGRES_USER:-postgresUSER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgresPW}
+    ports:
+      - '5432:5432' # Opcional, si deseas acceder a la base de datos desde tu máquina local.
 
   backend:
     container_name: backend
@@ -14,3 +23,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - 80:80
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB} # Asegúrate de que estas variables estén definidas en tu archivo credentials.
+    volumes:
+      - ./backend:/app # Añade esta línea
+
+volumes:
+  postgres_data:
