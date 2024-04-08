@@ -5,6 +5,13 @@ FROM python:3.11.4-slim
 # Se establece el directorio de trabajo en el contenedor
 WORKDIR /app
 
+# Instalar dependencias del sistema para psycopg2
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    # Cualquier otra dependencia necesaria
+    && rm -rf /var/lib/apt/lists/*
+
 # Se copian el archivo de requisitos en el contenedor
 COPY requirements.txt /app
 
