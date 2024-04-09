@@ -1,23 +1,13 @@
-from fastapi import APIRouter, File, UploadFile
-from typing import List
-import io
+from fastapi import APIRouter, File as FastAPIFile, UploadFile, Depends
+from sqlalchemy.orm import Session
+from core.dependencies import get_db
+from controller.file_read import read_pdf_and_save
 
-# from PyPDF2 import PdfReader
-from PyPDF2 import PdfFileReader
-
-file_read_router = APIRouter()
+file_router = APIRouter()
 
 
-@file_read_router.post("/pdf")
-async def read_pdf(file: UploadFile = File(...)):
-    """
-    Lee un archivo PDF y devuelve el contenido de texto.
-    """
-    pdf_contents = []
-    with io.BytesIO(await file.read()) as buffer:
-        buffer.seek(0)
-        pdf_reader = PdfFileReader(buffer)
-        for page_num in range(pdf_reader.numPages):
-            page = pdf_reader.getPage(page_num)
-            pdf_contents.append(page.extractText())
+@file_router.post("/pdf")
+async def read_pdf(file: UploadFile = FastAPIFile(...), db: Session = Depends(get_db)):
+    file_data = await file.read()
+    pdf_contents = read_pdf_and_save(file_data, file.filename, db)
     return {"pdf_contents": pdf_contents}
