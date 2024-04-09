@@ -1,18 +1,19 @@
-from pydantic import BaseSettings, PostgresDsn
+# from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Configuración de la base de datos
-    database_url: PostgresDsn  # Validación automática de DSN PostgreSQL
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: str = "5432"
+    POSTGRES_DB: str
 
-    # Ejemplo de configuración adicional
-    secret_key: str
-    debug_mode: bool = False  # Valor predeterminado si DEBUG_MODE no está definido
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     class Config:
-        # Especifica que Pydantic debería leer las variables de entorno
-        # para las configuraciones. Esto es útil si tus configuraciones
-        # provienen principalmente de variables de entorno.
         env_file = ".env"
         env_file_encoding = "utf-8"
 
