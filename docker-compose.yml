@@ -1,23 +1,24 @@
 version: '3.8'
 services:
   db:
-    image: postgres:latest
     container_name: postgres_db
+    restart: always
+    image: postgres:latest
+    env_file:
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    env_file:
-      - .env # Asegúrate de que este archivo contenga las variables de entorno para PostgreSQL.
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB:-postgresDB}
-      - POSTGRES_USER=${POSTGRES_USER:-postgresUSER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgresPW}
+      - ../IntegralData/database:/var/lib/postgresql/data
     ports:
-      - '5432:5432' # Opcional, si deseas acceder a la base de datos desde tu máquina local.
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
 
   backend:
     container_name: backend
     image: fastapiprojects/backend:latest
-    #platform: linux/arm64/v8
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -25,13 +26,31 @@ services:
       - 80:80
     depends_on:
       - db
+      - minio
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB} # Asegúrate de que estas variables estén definidas en tu archivo credentials.
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      - MINIO_ENDPOINT=http://minio:9000 
     volumes:
-      - ./backend:/app # Añade esta línea
-    # - ./.env:/.env
+      - ./backend:/app
+      - ../IntegralData/staticfiles:/app/data/staticfiles
+      - ../IntegralData/mediafiles:/app/data/mediafiles
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio_datalake
+    ports:
+      - '9095:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+      - ../IntegralData/datalake:/data
+    command: server /data --console-address ":9001"
 
 volumes:
   postgres_data:
+  minio_data:
