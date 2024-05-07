@@ -4,3 +4,4 @@ from .detection_ppe import detection_router
 
 # from .extrac_image_table import extrac_router
 from .extract_process_pdf import extrac_proccess_pdf_router
+from .process_file_pdf import process_extract_pdf

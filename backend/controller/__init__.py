@@ -4,3 +4,4 @@ from .extrac_image_table import process_pdf
 
 # from .extract_process_pdf import process_pdf
 from .extract_process_pdf import process_pdf_and_convert
+from .process_file_pdf import process_pdf

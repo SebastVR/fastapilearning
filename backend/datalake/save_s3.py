@@ -8,10 +8,33 @@ from fastapi import UploadFile
 from core.settings import settings
 
 
+# class SaveS3:
+#     def __init__(self):
+#         self.fs = s3fs.S3FileSystem(
+#             client_kwargs={"endpoint_url": settings.MINIO_ENDPOINT},
+#             key=settings.MINIO_ACCESS_KEY,
+#             secret=settings.MINIO_SECRET_KEY,
+#             use_ssl=False,
+#         )
+
+#     def upload_file_to_minio(self, bucket_name, object_name, file_data):
+#         with self.fs.open(f"{bucket_name}/{object_name}", "wb") as f:
+#             f.write(file_data)
+#         return f"{bucket_name}/{object_name}"
+
+#     def write_image_to_minio(self, bucket_name, object_name, file: UploadFile):
+#         object_name = f"images/{file.filename}"
+#         file_content = file.file.read()  # Leer el contenido del archivo
+#         file_path = self.upload_file_to_minio(bucket_name, object_name, file_content)
+#         file.file.close()  # Cerrar el archivo después de leerlo
+#         return file_path
+
+
 class SaveS3:
     def __init__(self):
+        self.endpoint_url = settings.MINIO_ENDPOINT
         self.fs = s3fs.S3FileSystem(
-            client_kwargs={"endpoint_url": settings.MINIO_ENDPOINT},
+            client_kwargs={"endpoint_url": self.endpoint_url},
             key=settings.MINIO_ACCESS_KEY,
             secret=settings.MINIO_SECRET_KEY,
             use_ssl=False,
@@ -27,7 +50,7 @@ class SaveS3:
         file_content = file.file.read()  # Leer el contenido del archivo
         file_path = self.upload_file_to_minio(bucket_name, object_name, file_content)
         file.file.close()  # Cerrar el archivo después de leerlo
-        return file_path
+        return f"{self.endpoint_url}/{file_path}"
 
 
 # class SaveS3:

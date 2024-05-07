@@ -50,7 +50,6 @@ def process_image(file: UploadFile, db: Session, project_id: int) -> Detection:
     bucket_name = "project-ppe-detection-datalake"  # Cambiar por el nombre real de tu bucket en MinIO
     object_name = f"images/{file.filename}"
     datalake_image_path = s3_saver.write_image_to_minio(bucket_name, object_name, file)
-
     # Procesar la imagen con YOLO
     model = YOLO(MODEL_PATH.as_posix())
     results = model.predict([local_image_path.as_posix()])
@@ -64,11 +63,12 @@ def process_image(file: UploadFile, db: Session, project_id: int) -> Detection:
             detection_counts[detection["name"]] += 1
 
     # Crear un nuevo registro de detección en la base de datos
+    current_datetime = datetime.utcnow()
     new_detection = Detection(
         datalake_image_path=datalake_image_path,
         project_id=project_id,
+        created_at=current_datetime,
         **detection_counts,
-        created_at=datetime.utcnow(),
     )
     db.add(new_detection)
     db.commit()
@@ -85,58 +85,6 @@ def save_image(file: UploadFile) -> Path:
     with file_location.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     return file_location
-
-
-##########################################################
-###########################################################
-########################################################
-
-
-# def save_image(file: UploadFile) -> Path:
-#     """
-#     Guarda un archivo cargado y devuelve la ruta al archivo guardado.
-#     """
-#     file_name = file.filename
-#     file_location = IMAGE_DIR / file_name
-#     with open(file_location, "wb") as buffer:
-#         buffer.write(
-#             file.file.read()
-#         )  # Escribir el contenido del archivo subido en el nuevo archivo
-#         file.file.close()  # Asegurarse de cerrar el archivo subido después de leerlo
-#     return file_location
-
-
-# def process_image(file: UploadFile, db: Session, project_id: int) -> Detection:
-#     """
-#     Procesa una imagen cargada utilizando YOLO para detectar elementos de protección personal,
-#     guarda la ruta de la imagen y registra los detalles de la detección en la base de datos.
-#     """
-
-#     file_path = save_image(file)  # Guardar la imagen
-
-#     # Procesar la imagen con YOLO
-#     model = YOLO(MODEL_PATH.as_posix())  # Asegúrate de pasar la ruta como string
-#     results = model.predict([str(file_path)])
-#     json_data = results[0].tojson()
-#     detections = json.loads(json_data)
-
-#     # Contabilizar los elementos detectados
-#     detection_counts = {item: 0 for item in EPP_ITEMS}  # Inicializar conteos en 0
-#     for detection in detections:
-#         if detection["name"] in detection_counts:
-#             detection_counts[detection["name"]] += 1
-
-#     # Crear un nuevo registro de detección en la base de datos
-#     new_detection = Detection(
-#         image_path=str(file_path),
-#         project_id=project_id,  # Obtener el project_id desde los argumentos de la función
-#         **detection_counts,  # Desempaqueta el diccionario directamente en los argumentos del modelo
-#     )
-#     db.add(new_detection)
-#     db.commit()
-#     db.refresh(new_detection)
-
-#     return new_detection
 
 
 def create_project(

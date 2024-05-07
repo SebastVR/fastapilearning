@@ -31,14 +31,15 @@ services:
       - .env
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
-      - MINIO_ENDPOINT=http://minio:9000 
+      # - MINIO_ENDPOINT=http://localhost:9000 
+      - MINIO_ENDPOINT=http://minio:9000
     volumes:
       - ./backend:/app
       - ../IntegralData/staticfiles:/app/data/staticfiles
       - ../IntegralData/mediafiles:/app/data/mediafiles
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2024-03-26T22-10-45Z
     container_name: minio_datalake
     ports:
       - '9095:9000'
