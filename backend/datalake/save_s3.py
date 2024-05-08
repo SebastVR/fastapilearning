@@ -8,6 +8,7 @@ from fastapi import UploadFile
 from core.settings import settings
 from botocore.exceptions import ClientError
 import boto3
+import mimetypes
 
 
 class SaveS3:
@@ -20,17 +21,19 @@ class SaveS3:
             use_ssl=False,
         )
 
-    def upload_file_to_minio(self, bucket_name, object_name, file_data):
+    def upload_file_to_minio(self, bucket_name, object_name, file_data, content_type):
         """
-        Uploads file data to MinIO.
+        Uploads file data to MinIO with the correct content type.
         """
         if not file_data:
             raise ValueError("No hay datos para escribir en el archivo.")
 
         try:
-            with self.fs.open(f"{bucket_name}/{object_name}", "wb") as f:
+            with self.fs.open(
+                f"{bucket_name}/{object_name}", "wb", content_type=content_type
+            ) as f:
                 f.write(file_data)
-                f.flush()  # Asegurarse de que los datos se escriban completamente
+                f.flush()
         except Exception as e:
             raise Exception(f"Error al escribir el archivo en MinIO: {str(e)}")
 
@@ -40,21 +43,22 @@ class SaveS3:
         """
         Handles the full process of reading an image file and writing it to MinIO.
         """
-        file.file.seek(0)  # Asegúrate de rebobinar el archivo
-        file_content = file.file.read()  # Leer el contenido del archivo
-
+        file.file.seek(0)
+        file_content = file.file.read()
         if not file_content:
             raise ValueError("El contenido del archivo está vacío.")
 
-        # Construir el nombre del objeto con la carpeta 'images/'
+        # Determinar el tipo MIME del archivo basado en la extensión del nombre del archivo
+        mime_type, _ = mimetypes.guess_type(object_name)
+        if not mime_type:
+            mime_type = "application/octet-stream"
+
         object_name = f"images/{object_name}"
-
-        # Asegurarse de que el directorio de imágenes existe
         self.fs.makedirs(f"{bucket_name}/images", exist_ok=True)
+        file_path = self.upload_file_to_minio(
+            bucket_name, object_name, file_content, mime_type
+        )
 
-        # Subir el archivo al bucket de MinIO y obtener la ruta en el datalake
-        file_path = self.upload_file_to_minio(bucket_name, object_name, file_content)
+        file.file.close()
 
-        file.file.close()  # Cerrar el archivo después de la operación de subida
-
-        return f"http://localhost:9095/{file_path}"  # Devuelve la URL completa accesible desde el navegador
+        return f"http://localhost:9095/{file_path}"
