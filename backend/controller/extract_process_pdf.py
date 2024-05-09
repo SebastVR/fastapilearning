@@ -1,58 +1,87 @@
-from utils.extract_process_pdf import extract_images_from_pdf, extract_tables_from_pdf
+from fastapi import UploadFile
+import io
+import fitz  # PyMuPDF
+import pdfplumber
+from typing import Dict
+from utils.extract_process_pdf import (
+    extract_text,
+    extract_images,
+    extract_tables,
+    extract_layout,
+)
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import JSONResponse
+import tempfile
+import os
+import camelot
+import base64
+import io
+import fitz  # PyMuPDF
+from typing import Dict
+
+import base64
 
 
-# def process_pdf(pdf_path):
-#     """
-#     Procesa el PDF para extraer imágenes y tablas.
-#     Devuelve las rutas de las imágenes y los DataFrames de las tablas.
-#     """
-#     image_files = extract_images_from_pdf(pdf_path)
-#     tables = extract_tables_from_pdf(pdf_path)
-#     table_data = [table.to_dict(orient="records") for table in tables]
-#     return table_data, image_files
+# async def process_pdf_file(file: UploadFile) -> Dict[str, any]:
+async def process_pdf_file(file: UploadFile) -> Dict[str, any]:
+    contents = {
+        "headers": [],
+        "footers": [],
+        "text": "",
+        "tables": [],
+        "images": [],
+        "text_blocks": [],
+    }
 
+    pdf_bytes = await file.read()
 
-# def process_pdf(pdf_path):
-#     """
-#     Procesa el PDF para extraer tablas.
-#     Devuelve DataFrames de las tablas extraídas.
-#     """
-#     tables = extract_tables_from_pdf(pdf_path)
-#     return tables
+    # Guardar el archivo temporalmente para extracción con Camelot
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        tmp.write(pdf_bytes)
+        tmp_path = tmp.name
 
+    # Extracción de layout
+    headers, footers, text_blocks = extract_layout(tmp_path)
+    contents["headers"] = headers
+    contents["footers"] = footers
+    contents["text_blocks"] = text_blocks
 
-# def process_pdf(pdf_path):
-#     """
-#     Procesa el PDF para extraer tablas, sincrónicamente.
-#     """
-#     tables = extract_tables_from_pdf(pdf_path)
-#     return tables
+    # Extracción de tablas utilizando la función de utilidades
+    try:
+        camelot_tables = extract_tables(tmp_path, method="stream")
+        table_texts = []
+        for table in camelot_tables:
+            df = table.df
+            contents["tables"].append(df.to_dict())
+            # Agregar todo el texto de la tabla a una lista para su posterior eliminación del texto principal
+            table_texts.extend(df.to_string(index=False, header=False).split("\n"))
+    finally:
+        os.remove(tmp_path)
+    # Extracción de texto usando pdfplumber
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        raw_text = ""
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                raw_text += page_text + "\n"
 
+    # Limpiar el texto eliminando las coincidencias con el texto de las tablas
+    for table_text in table_texts:
+        raw_text = raw_text.replace(table_text, "")
 
-import utils
-import pandas as pd
-from io import BytesIO
+    contents["text"] = raw_text
 
+    # Extracción de imágenes y otros elementos usando PyMuPDF (fitz)
+    with fitz.open("pdf", pdf_bytes) as doc:
+        for page in doc:
+            image_list = page.get_images(full=True)
+            for img_ref in image_list:
+                xref = img_ref[0]
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+                encoded_image = base64.b64encode(image_bytes).decode("utf-8")
+                contents["images"].append(encoded_image)
 
-def process_pdf_and_convert(pdf_path, format_type):
-    """
-    Procesa el PDF para extraer tablas y devuelve el archivo en el formato especificado.
-    """
-    tables = utils.extract_tables_from_pdf(pdf_path)
-    if not tables:
-        return None
-
-    if format_type == "csv":
-        buffer = BytesIO()
-        tables[0].to_csv(buffer, index=False, encoding="utf-8")
-        buffer.seek(0)
-        return buffer
-
-    elif format_type == "xlsx":
-        buffer = BytesIO()
-        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-            tables[0].to_excel(writer, index=False)
-        buffer.seek(0)
-        return buffer
-
-    return None
+    return {
+        "contents": contents,
+    }

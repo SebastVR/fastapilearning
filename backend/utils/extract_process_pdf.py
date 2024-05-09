@@ -2,31 +2,68 @@ import fitz  # PyMuPDF
 import camelot
 from PIL import Image
 import io
+import pdfplumber
 
 
-def extract_images_from_pdf(pdf_path):
-    """
-    Extrae imágenes directamente del archivo PDF utilizando PyMuPDF.
-    Guarda cada imagen extraída como PNG y devuelve los nombres de los archivos.
-    """
-    doc = fitz.open(pdf_path)
-    image_files = []
-    for i in range(len(doc)):
-        for img_index, img in enumerate(doc.get_page_images(i)):
+def extract_text(pdf_bytes):
+    text = ""
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text() or ""
+    return text
+
+
+# def extract_tables(pdf_path, method="stream"):
+#     tables = camelot.read_pdf(
+#         pdf_path, flavor=method, pages="all"
+#     )  # Puedes especificar 'stream' o 'lattice'
+#     return [table.df for table in tables]
+def extract_tables(pdf_path, method="stream"):
+    tables = camelot.read_pdf(pdf_path, flavor=method, pages="all")
+    return tables
+
+
+def extract_images(file_path):
+    doc = fitz.open(file_path)
+    images = []
+    for page in doc:
+        image_list = page.get_images(full=True)
+        for image_index, img in enumerate(image_list, start=1):
             xref = img[0]
             base_image = doc.extract_image(xref)
             image_bytes = base_image["image"]
-            image = Image.open(io.BytesIO(image_bytes))
-            file_name = f"page_{i}_img_{img_index}.png"
-            image.save(file_name, "PNG")
-            image_files.append(file_name)
+            images.append(
+                image_bytes
+            )  # Podrías guardar las imágenes o devolver como bytes
     doc.close()
-    return image_files
+    return images
 
 
-def extract_tables_from_pdf(pdf_path):
-    """
-    Utiliza Camelot para extraer tablas de un archivo PDF y las devuelve como listas de DataFrames.
-    """
-    tables = camelot.read_pdf(pdf_path, pages="all", flavor="stream")
-    return [table.df for table in tables]
+# def extract_tables(pdf_path):
+#     """
+#     Utiliza Camelot para extraer tablas de un archivo PDF y las devuelve como listas de DataFrames.
+#     """
+#     tables = camelot.read_pdf(pdf_path, pages="all", flavor="stream")
+#     return [table.df for table in tables]
+
+
+def extract_layout(pdf_path):
+    headers, footers, text_blocks = [], [], []
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            page_height = page.height
+            header_threshold = (
+                page_height * 0.1
+            )  # Ajusta estos valores según sea necesario
+            footer_threshold = page_height * 0.9
+
+            for block in page.extract_words():  # o 'page.extract_text()'
+                block_bottom = block["bottom"]
+                block_top = block["top"]
+                if block_top < header_threshold:
+                    headers.append(block["text"])
+                elif block_bottom > footer_threshold:
+                    footers.append(block["text"])
+                else:
+                    text_blocks.append(block["text"])
+    return headers, footers, text_blocks

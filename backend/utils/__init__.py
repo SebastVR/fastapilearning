@@ -6,7 +6,12 @@ from .extrac_image_table import (
     save_images,
 )
 
-from .extract_process_pdf import extract_images_from_pdf, extract_tables_from_pdf
+from .extract_process_pdf import (
+    extract_text,
+    extract_images,
+    extract_tables,
+    extract_layout,
+)
 from .process_file_pdf import (
     extract_text,
     extract_tables,

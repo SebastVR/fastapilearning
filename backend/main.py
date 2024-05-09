@@ -7,7 +7,7 @@ from router.detection_ppe import detection_router
 from router.extrac_image_table import extrac_router
 
 # from router.extract_process_pdf import extrac_proccess_pdf
-from router.extract_process_pdf import extrac_proccess_pdf_router
+from router.extract_process_pdf import extract_elements
 from fastapi.middleware.cors import CORSMiddleware
 
 from router.process_file_pdf import process_extract_pdf
@@ -83,10 +83,10 @@ app.include_router(
 
 # app.include_router(extrar_router)
 app.include_router(
-    extrac_proccess_pdf_router,
+    extract_elements,
     prefix="/api",  # Todos los endpoints en este router tendrán este prefijo
     tags=[
-        "Extrac PDF Tables"
+        "Extrac PDF Elements"
     ],  # Tag para agruparlos en la documentación automática de FastAPI
 )
 

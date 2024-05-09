@@ -28,9 +28,17 @@ class SaveS3:
         if not file_data:
             raise ValueError("No hay datos para escribir en el archivo.")
 
+        # Asegurarse de incluir el encabezado Content-Disposition como 'inline'
+        metadata = {
+            "Content-Type": content_type,
+            "Content-Disposition": "inline",  # Esto sugiere al navegador mostrar el archivo
+        }
+
         try:
             with self.fs.open(
-                f"{bucket_name}/{object_name}", "wb", content_type=content_type
+                f"{bucket_name}/{object_name}",
+                "wb",
+                metadata=metadata,  # Pasar los metadatos aquí
             ) as f:
                 f.write(file_data)
                 f.flush()
@@ -52,13 +60,17 @@ class SaveS3:
         mime_type, _ = mimetypes.guess_type(object_name)
         if not mime_type:
             mime_type = "application/octet-stream"
+            # mime_type = "image/jpeg"
 
-        object_name = f"images/{object_name}"
-        self.fs.makedirs(f"{bucket_name}/images", exist_ok=True)
+        object_name = f"{object_name}"
+        self.fs.makedirs(f"{bucket_name}", exist_ok=True)
         file_path = self.upload_file_to_minio(
             bucket_name, object_name, file_content, mime_type
         )
 
         file.file.close()
 
+        # return f"{self.endpoint_url}/{file_path}"
         return f"http://localhost:9095/{file_path}"
+
+        # http://minio:9000/project-ppe-detection-datalake/images/descarga.jpg
