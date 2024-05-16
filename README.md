@@ -7,3 +7,5 @@ docker-compose run backend alembic upgrade head
 docker exec -it backend alembic revision --autogenerate -m "Create project and detection table"
 docker exec -it backend alembic upgrade head
 docker cp /home/integral/Downloads/python/best.pt backend:/app/data/staticfiles/
+
+docker exec -it backend pytest tests/detection_ppe.py
