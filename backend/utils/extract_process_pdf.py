@@ -13,11 +13,6 @@ def extract_text(pdf_bytes):
     return text
 
 
-# def extract_tables(pdf_path, method="stream"):
-#     tables = camelot.read_pdf(
-#         pdf_path, flavor=method, pages="all"
-#     )  # Puedes especificar 'stream' o 'lattice'
-#     return [table.df for table in tables]
 def extract_tables(pdf_path, method="stream"):
     tables = camelot.read_pdf(pdf_path, flavor=method, pages="all")
     return tables
@@ -37,14 +32,6 @@ def extract_images(file_path):
             )  # Podrías guardar las imágenes o devolver como bytes
     doc.close()
     return images
-
-
-# def extract_tables(pdf_path):
-#     """
-#     Utiliza Camelot para extraer tablas de un archivo PDF y las devuelve como listas de DataFrames.
-#     """
-#     tables = camelot.read_pdf(pdf_path, pages="all", flavor="stream")
-#     return [table.df for table in tables]
 
 
 def extract_layout(pdf_path):

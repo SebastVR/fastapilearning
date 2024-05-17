@@ -1,8 +1,8 @@
-"""Firt migrations
+"""Create file table
 
-Revision ID: dfdb36556aa1
+Revision ID: 1d67ce3d6f40
 Revises: 
-Create Date: 2024-04-09 15:38:03.679876
+Create Date: 2024-05-15 16:00:07.322819
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'dfdb36556aa1'
+revision: str = '1d67ce3d6f40'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

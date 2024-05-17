@@ -134,3 +134,56 @@ def test_get_project(test_client):
 #     print(f"Fetch detection response JSON: {response.json()}")
 #     assert response.status_code == 200
 #     assert response.json()["id"] == detection_id
+
+
+def test_delete_project(test_client):
+    # Primero, creamos un proyecto para luego eliminarlo
+    create_response = test_client.post(
+        "/api/projects/",
+        json={
+            "name": "Project C",
+            "code": "C001",
+            "location": "Location C",
+            "phone": "1234567891",
+        },
+    )
+    project_id = create_response.json()["id"]
+    print(f"Created project ID: {project_id}")
+
+    # Ahora procedemos a eliminar el proyecto
+    delete_response = test_client.delete(f"/api/projects/{project_id}")
+    assert delete_response.status_code == 204, "Error deleting the project"
+
+    # Verificar que el proyecto ya no existe
+    fetch_response = test_client.get(f"/api/projects/{project_id}")
+    assert fetch_response.status_code == 404, "Project still exists after deletion"
+
+
+# def test_delete_detection(test_client):
+#     # Crear un proyecto primero
+#     project_response = test_client.post(
+#         "/api/projects/",
+#         json={
+#             "name": "Project for Detection",
+#             "code": "D001",
+#             "location": "Location D",
+#             "phone": "1234567892",
+#         },
+#     )
+#     project_id = project_response.json()["id"]
+
+#     # Crear una detección asociada a ese proyecto
+#     detection_response = test_client.post(
+#         f"/api/detections/{project_id}",
+#         files={"file": ("filename", b"fakeimagecontent", "image/jpeg")},
+#     )
+#     detection_id = detection_response.json()["id"]
+#     print(f"Created detection ID: {detection_id}")
+
+#     # Proceder a eliminar la detección
+#     delete_response = test_client.delete(f"/api/detections/{detection_id}")
+#     assert delete_response.status_code == 204, "Error deleting the detection"
+
+#     # Verificar que la detección ya no existe
+#     fetch_response = test_client.get(f"/api/detections/{detection_id}")
+#     assert fetch_response.status_code == 404, "Detection still exists after deletion"

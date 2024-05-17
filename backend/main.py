@@ -92,10 +92,10 @@ app.include_router(
 
 
 # app.include_router(extrar_router)
-app.include_router(
-    process_extract_pdf,
-    prefix="/api",  # Todos los endpoints en este router tendrán este prefijo
-    tags=[
-        "Extrac PDF all"
-    ],  # Tag para agruparlos en la documentación automática de FastAPI
-)
+# app.include_router(
+#     process_extract_pdf,
+#     prefix="/api",  # Todos los endpoints en este router tendrán este prefijo
+#     tags=[
+#         "Extrac PDF all"
+#     ],  # Tag para agruparlos en la documentación automática de FastAPI
+# )

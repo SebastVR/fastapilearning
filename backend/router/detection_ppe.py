@@ -22,6 +22,7 @@ async def create_detection(
         return {
             "id": detection.id,
             "datalake_image_path": detection.datalake_image_path,
+            "datalake_image_processed": detection.datalake_image_processed,
             "arnes": detection.arnes,
             "barbuquejo": detection.barbuquejo,
             "botas": detection.botas,
@@ -49,6 +50,7 @@ async def get_detection_details(detection_id: int, db: Session = Depends(get_db)
         return {
             "id": detection.id,
             "datalake_image_path": detection.datalake_image_path,
+            "datalake_image_processed": detection.datalake_image_processed,
             "arnes": detection.arnes,
             "barbuquejo": detection.barbuquejo,
             "botas": detection.botas,

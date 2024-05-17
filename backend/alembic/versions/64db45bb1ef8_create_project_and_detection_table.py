@@ -1,8 +1,8 @@
 """Create project and detection table
 
-Revision ID: f7e32fb7397a
-Revises: 47cc2fee693b
-Create Date: 2024-04-26 05:01:53.787551
+Revision ID: 64db45bb1ef8
+Revises: 1d67ce3d6f40
+Create Date: 2024-05-15 16:00:28.234624
 
 """
 
@@ -13,8 +13,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "f7e32fb7397a"
-down_revision: Union[str, None] = "47cc2fee693b"
+revision: str = "64db45bb1ef8"
+down_revision: Union[str, None] = "1d67ce3d6f40"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -37,6 +37,7 @@ def upgrade() -> None:
         "detections",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("datalake_image_path", sa.String(), nullable=True),
+        sa.Column("datalake_image_processed", sa.String(), nullable=True),
         sa.Column("arnes", sa.Integer(), nullable=False),
         sa.Column("barbuquejo", sa.Integer(), nullable=False),
         sa.Column("botas", sa.Integer(), nullable=False),
@@ -69,3 +70,4 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_projects_name"), table_name="projects")
     op.drop_index(op.f("ix_projects_id"), table_name="projects")
     op.drop_table("projects")
+    # ### end Alembic commands ###

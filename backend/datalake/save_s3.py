@@ -47,30 +47,22 @@ class SaveS3:
 
         return f"{bucket_name}/{object_name}"
 
-    def write_image_to_minio(self, bucket_name, object_name, file: UploadFile):
+    def write_image_to_minio(self, bucket_name, object_name, file_data):
         """
-        Handles the full process of reading an image file and writing it to MinIO.
+        Handles the full process of writing binary data to MinIO.
         """
-        file.file.seek(0)
-        file_content = file.file.read()
-        if not file_content:
+        if not file_data:
             raise ValueError("El contenido del archivo está vacío.")
 
-        # Determinar el tipo MIME del archivo basado en la extensión del nombre del archivo
         mime_type, _ = mimetypes.guess_type(object_name)
         if not mime_type:
             mime_type = "application/octet-stream"
-            # mime_type = "image/jpeg"
 
-        object_name = f"{object_name}"
         self.fs.makedirs(f"{bucket_name}", exist_ok=True)
         file_path = self.upload_file_to_minio(
-            bucket_name, object_name, file_content, mime_type
+            bucket_name, object_name, file_data, mime_type
         )
 
-        file.file.close()
-
-        # return f"{self.endpoint_url}/{file_path}"
         return f"http://localhost:9095/{file_path}"
 
         # http://minio:9000/project-ppe-detection-datalake/images/descarga.jpg

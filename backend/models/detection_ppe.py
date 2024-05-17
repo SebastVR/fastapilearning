@@ -35,6 +35,7 @@ class Detection(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     datalake_image_path = Column(String, index=True)
+    datalake_image_processed = Column(String, index=True)
     arnes = Column(Integer, default=0, nullable=False)
     barbuquejo = Column(Integer, default=0, nullable=False)
     botas = Column(Integer, default=0, nullable=False)

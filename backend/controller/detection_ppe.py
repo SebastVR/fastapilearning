@@ -49,7 +49,7 @@ def process_image(file: UploadFile, db: Session, project_id: int) -> Detection:
     bucket_name = "project-ppe-detection-datalake"
     object_name_original = f"original/{file.filename}"
     with open(local_image_path, "rb") as img_file:
-        datalake_image_path_original = s3_saver.write_image_to_minio(
+        datalake_image_path = s3_saver.write_image_to_minio(
             bucket_name, object_name_original, img_file.read()
         )
 
@@ -70,14 +70,14 @@ def process_image(file: UploadFile, db: Session, project_id: int) -> Detection:
                 processed_file.is_file()
             ):  # Verificar si es un archivo y no un directorio
                 with open(processed_file, "rb") as processed_img_file:
-                    processed_image_path = s3_saver.write_image_to_minio(
+                    datalake_image_processed = s3_saver.write_image_to_minio(
                         bucket_name,
                         f"procesada/{processed_file.name}",
                         processed_img_file.read(),
                     )
                 break
     else:
-        processed_image_path = "No processed image found"
+        datalake_image_processed = "No processed image found"
 
     # Procesar los resultados
     json_data = results[0].tojson()
@@ -89,8 +89,8 @@ def process_image(file: UploadFile, db: Session, project_id: int) -> Detection:
 
     # Registro en la base de datos
     new_detection = Detection(
-        datalake_image_path=datalake_image_path_original,
-        datalake_image_processed=processed_image_path,  # Usar la ruta procesada
+        datalake_image_path=datalake_image_path,
+        datalake_image_processed=datalake_image_processed,  # Usar la ruta procesada
         project_id=project_id,
         created_at=datetime.utcnow(),
         **detection_counts,
