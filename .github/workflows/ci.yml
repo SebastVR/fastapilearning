@@ -1,0 +1,42 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main  # Asegúrate de usar el nombre de tu rama principal
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      docker:
+        image: docker://docker:19.03.12-dind
+        options: --privileged
+        ports:
+          - 2375:2375
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Set up Docker Environment
+      run: |
+        docker context create ci-context --docker "host=tcp://docker:2375"
+        docker context use ci-context
+
+    - name: Build Docker Image
+      run: docker build -t my-app/backend:latest -f Dockerfile .
+
+    - name: Run Docker Container
+      run: docker run -d --name backend my-app/backend:latest
+
+    - name: Run tests
+      run: docker exec backend pytest tests/detection_ppe.py
+
+    - name: Cleanup
+      if: always()
+      run: docker stop backend && docker rm backend
