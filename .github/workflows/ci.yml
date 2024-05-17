@@ -11,7 +11,7 @@ jobs:
 
     services:
       docker:
-        image: docker://docker:19.03.12-dind
+        image: docker:19.03.12-dind
         options: --privileged
         ports:
           - 2375:2375
@@ -25,8 +25,11 @@ jobs:
 
     - name: Set up Docker Environment
       run: |
-        docker context create ci-context --docker "host=tcp://docker:2375"
+        docker context create ci-context --docker "host=tcp://localhost:2375"
         docker context use ci-context
+
+    - name: Verify Docker Context
+      run: docker context ls
 
     - name: Build Docker Image
       run: docker build -t my-app/backend:latest -f Dockerfile .
