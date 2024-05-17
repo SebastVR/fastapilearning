@@ -10,36 +10,30 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      docker:
-        image: docker:19.03.12-dind
-        options: --privileged
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         ports:
-          - 2375:2375
+          - 5432:5432
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-
-    - name: Set up Docker Environment
+    - name: Set up Docker Compose
       run: |
-        docker context create ci-context --docker "host=tcp://localhost:2375"
-        docker context use ci-context
+        docker-compose -f docker-compose.yml up -d
 
-    - name: Verify Docker Context
-      run: docker context ls
-
-    - name: Build Docker Image
-      run: docker build -t my-app/backend:latest -f Dockerfile .
-
-    - name: Run Docker Container
-      run: docker run -d --name backend my-app/backend:latest
+    - name: Wait for services to be up
+      run: |
+        sleep 30
 
     - name: Run tests
-      run: docker exec backend pytest tests/detection_ppe.py
+      run: docker-compose exec backend pytest tests/detection_ppe.py
 
     - name: Cleanup
       if: always()
-      run: docker stop backend && docker rm backend
+      run: docker-compose down
