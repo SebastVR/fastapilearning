@@ -1,7 +1,7 @@
 name: Continuous Integration
 
 on:
-  pull_request:
+  push:
     branches:
       - main  # Asegúrate de usar el nombre de tu rama principal
 
