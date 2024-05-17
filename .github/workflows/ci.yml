@@ -3,7 +3,7 @@ name: Continuous Integration
 on:
   push:
     branches:
-      - main  # Asegúrate de usar el nombre de tu rama principal
+      - main 
 
 jobs:
   build-and-test:
