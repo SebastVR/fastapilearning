@@ -47,23 +47,25 @@ def process_image(file: UploadFile, db: Session, project_id: int) -> Detection:
 
     # Cargar la imagen original a MinIO
     bucket_name = "project-ppe-detection-datalake"
-    object_name_original = f"original/{file.filename}"
+    object_name_original = f"original/{uuid4()}_{file.filename}"
     with open(local_image_path, "rb") as img_file:
         datalake_image_path = s3_saver.write_image_to_minio(
             bucket_name, object_name_original, img_file.read()
         )
 
     # Procesar la imagen con YOLO
-    datalake_image_path_proceada = PROCESSED_DIR / "procesada"
+    datalake_image_path_procesada = (
+        PROCESSED_DIR / f"procesada_{uuid4()}_{file.filename}"
+    )
     model = YOLO(MODEL_PATH.as_posix())
     results = model.predict(
         [local_image_path.as_posix()],
         save=True,
-        project=datalake_image_path_proceada.as_posix(),
+        project=datalake_image_path_procesada.as_posix(),
     )
 
     # Revisar qué se ha guardado realmente en el directorio
-    processed_files = list(datalake_image_path_proceada.glob("**/*"))
+    processed_files = list(datalake_image_path_procesada.glob("**/*"))
     if processed_files:
         for processed_file in processed_files:
             if (
@@ -72,7 +74,7 @@ def process_image(file: UploadFile, db: Session, project_id: int) -> Detection:
                 with open(processed_file, "rb") as processed_img_file:
                     datalake_image_processed = s3_saver.write_image_to_minio(
                         bucket_name,
-                        f"procesada/{processed_file.name}",
+                        f"procesada/{uuid4()}_{processed_file.name}",
                         processed_img_file.read(),
                     )
                 break
@@ -102,8 +104,12 @@ def process_image(file: UploadFile, db: Session, project_id: int) -> Detection:
     return new_detection
 
 
+from uuid import uuid4
+
+
 def save_image(file: UploadFile) -> Path:
-    file_location = IMAGE_DIR / file.filename
+    unique_filename = f"{uuid4()}_{file.filename}"
+    file_location = IMAGE_DIR / unique_filename
     with file_location.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     return file_location
