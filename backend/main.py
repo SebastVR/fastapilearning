@@ -3,7 +3,7 @@ from fastapi import FastAPI
 
 from router.file_read import file_router
 from router.router_items import item_router
-from router.detection_ppe import detection_router, test_router
+from router.detection_ppe import detection_router
 from router.extrac_image_table import extrac_router
 
 # from router.extract_process_pdf import extrac_proccess_pdf
@@ -38,7 +38,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(test_router, prefix="/api")
 
 app.include_router(
     detection_router,
