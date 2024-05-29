@@ -1,9 +1,16 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from sqlalchemy.orm import Session
-from controller.detection_ppe import process_image, create_project, get_project
+from controller.detection_ppe import (
+    process_image,
+    create_project,
+    get_project,
+    process_images_from_video,
+)
 from core.dependencies import get_db
 from fastapi import APIRouter, HTTPException, Depends, Request
 from models.detection_ppe import Detection
+import cv2
+import logging
 
 detection_router = APIRouter()
 
@@ -112,3 +119,19 @@ async def get_project_endpoint(project_id: int, db: Session = Depends(get_db)):
         "location": project.location,
         "phone": project.phone,
     }
+
+
+###########################################
+###########################################
+@detection_router.post("/api/detections/video/{project_id}", status_code=201)
+async def create_detection_from_video(project_id: int, db: Session = Depends(get_db)):
+    try:
+        process_images_from_video(db, project_id)
+        return {"message": "Detections created from video"}
+    except Exception as e:
+        logging.error(f"Error processing video: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+###########################################
+###########################################
