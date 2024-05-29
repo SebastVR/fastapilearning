@@ -44,6 +44,15 @@ services:
       - ./backend:/app
       - ../IntegralData/staticfiles:/app/data/staticfiles
       - ../IntegralData/mediafiles:/app/data/mediafiles
+    devices:
+      # - /dev:/dev
+      # - "/dev/video0:/dev/video0"
+      - "/dev/video0:/dev/video0"
+      - "/dev/video1:/dev/video1"
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - SYS_RAWIO
     networks:
       - app-network
 
