@@ -3,7 +3,7 @@ from fastapi import FastAPI
 
 from router.file_read import file_router
 from router.router_items import item_router
-from router.detection_ppe import detection_router
+from router.detection_ppe import detection_router, test_router
 from router.extrac_image_table import extrac_router
 
 # from router.extract_process_pdf import extrac_proccess_pdf
@@ -24,18 +24,26 @@ app = FastAPI()
 #     "http://127.0.0.1",
 #     "http://127.0.0.1:9000",
 #     "http://127.0.0.1:9001",
+#     "http://192.168.2.101:4747/video",
 # ]
 
-# origins = ["*"]
-app = FastAPI()
+origins = ["*"]
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+app.include_router(test_router, prefix="/api")
+
+app.include_router(
+    detection_router,
+    prefix="/api",  # Nota: '/api' ya está incluido en las rutas internas del router
+    tags=["detections"],
 )
 
 
@@ -52,12 +60,6 @@ app.include_router(
     tags=["files"],  # Agrega etiquetas para organizar tus rutas.
 )
 
-
-app.include_router(
-    detection_router,
-    prefix="/api",  # Nota: '/api' ya está incluido en las rutas internas del router
-    tags=["detections"],
-)
 
 # Integración de los routers para projects
 # app.include_router(
