@@ -14,6 +14,9 @@ from datetime import datetime, timedelta
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+import cv2
+import datetime as dt
+
 # Configuración del directorio de imágenes
 # IMAGE_DIR = Path("data/media")
 # IMAGE_DIR.mkdir(parents=True, exist_ok=True)
@@ -23,7 +26,7 @@ IMAGE_DIR = Path("data/media")
 IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 PROCESSED_DIR = Path("data/processed")
 PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-MODEL_PATH = Path("data/staticfiles/best.pt")
+MODEL_PATH = Path("data/staticfiles/best_runs_79E_ML_5255IMG_15-05-2024.pt")
 
 # Lista de todos los posibles elementos de EPP
 EPP_ITEMS = [
@@ -142,3 +145,102 @@ def delete_detection(db: Session, detection_id: int) -> None:
     if detection:
         db.delete(detection)
         db.commit()
+
+
+##############################################################
+##############################################################
+
+
+def save_image_from_frame(frame, cont) -> Path:
+    unique_filename = f"{uuid4()}_IMG_{cont:04d}.jpg"
+    file_location = IMAGE_DIR / unique_filename
+    cv2.imwrite(str(file_location), frame)
+    return file_location
+
+
+def process_images_from_video(db: Session, project_id: int):
+    s3_saver = SaveS3()
+    capture = cv2.VideoCapture("http://192.168.2.101:4747/video")
+    # model = YOLO(Path().as_posix())
+    model = YOLO(MODEL_PATH.as_posix())
+    cont = 0
+    tiempoA = dt.datetime.now()  # Tiempo de inicio del proceso
+    max_duration = dt.timedelta(seconds=25)  # Duración máxima del vídeo
+    interval_duration = dt.timedelta(seconds=5)  # Intervalo de captura
+    tiempo_ultima_captura = dt.datetime.now()  # Tiempo de la última captura
+
+    while capture.isOpened():
+        tiempo_actual = dt.datetime.now()
+        tiempo_total_transcurrido = tiempo_actual - tiempoA
+        tiempo_desde_ultima_captura = tiempo_actual - tiempo_ultima_captura
+
+        if tiempo_total_transcurrido >= max_duration:
+            logging.info("Maximum duration reached, stopping video capture.")
+            break
+
+        # if tiempo_desde_ultima_captura >= interval_duration:
+        ret, frame = capture.read()
+        if not ret:
+            logging.error("Failed to capture image from video stream.")
+            break
+
+        img_file = save_image_from_frame(frame, cont)
+        datalake_image_path_procesada = (
+            Path("data/processed") / f"procesada_{uuid4()}_{img_file.name}"
+        )
+        results = model.predict(
+            [img_file.as_posix()],
+            save=True,
+            project=datalake_image_path_procesada.as_posix(),
+        )
+
+        processed_files = list(datalake_image_path_procesada.glob("**/*"))
+        datalake_image_processed = "No processed image found"
+        for processed_file in processed_files:
+            if processed_file.is_file():
+                with open(processed_file, "rb") as processed_img_file:
+                    datalake_image_processed = s3_saver.write_image_to_minio(
+                        "project-ppe-detection-datalake",
+                        f"procesada/{uuid4()}_{processed_file.name}",
+                        processed_img_file.read(),
+                    )
+                break
+
+        object_name_original = f"original/{img_file.name}"
+        with open(img_file, "rb") as img_file_obj:
+            datalake_image_path = s3_saver.write_image_to_minio(
+                "project-ppe-detection-datalake",
+                object_name_original,
+                img_file_obj.read(),
+            )
+
+        json_data = results[0].tojson()
+        detections = json.loads(json_data)
+        detection_counts = {item: 0 for item in EPP_ITEMS}
+        for detection in detections:
+            if detection["name"] in detection_counts:
+                detection_counts[detection["name"]] += 1
+
+        new_detection = Detection(
+            datalake_image_path=datalake_image_path,
+            datalake_image_processed=datalake_image_processed,
+            project_id=project_id,
+            created_at=dt.datetime.utcnow(),
+            **detection_counts,
+        )
+        db.add(new_detection)
+        db.commit()
+        db.refresh(new_detection)
+
+        cont += 1
+        tiempo_ultima_captura = (
+            dt.datetime.now()
+        )  # Actualiza el tiempo después de cada captura
+
+        if cv2.waitKey(1) == ord("s"):
+            logging.info("Stopping video capture manually.")
+            break
+
+    capture.release()
+    cv2.destroyAllWindows()
+    logging.info(f"Total images captured and processed: {cont}")

@@ -6,6 +6,7 @@ from .detection_ppe import (
     get_project,
     delete_project,
     delete_detection,
+    process_images_from_video,
 )
 from .extrac_image_table import process_pdf
 
