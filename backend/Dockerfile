@@ -16,6 +16,11 @@ RUN apt-get update && apt-get install -y \
     gcc \
     libgl1-mesa-dev \ 
     libglib2.0-0 \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \  
+    v4l-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Se copian el archivo de requisitos en el contenedor
